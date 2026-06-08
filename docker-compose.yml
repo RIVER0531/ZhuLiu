@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: riverflow-mysql
+    restart: unless-stopped
+    platform: linux/amd64
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-riverflow123}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-riverflow}
+      MYSQL_USER: ${MYSQL_USER:-riverflow}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-riverflow123}
+      TZ: UTC
+    command: --default-time-zone=+00:00
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - riverflow-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  backend:
+    build: ./backend
+    container_name: riverflow-backend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: 3001
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: ${MYSQL_USER:-riverflow}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-riverflow123}
+      DB_NAME: ${MYSQL_DATABASE:-riverflow}
+    networks:
+      - riverflow-net
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    container_name: riverflow-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    networks:
+      - riverflow-net
+    depends_on:
+      - backend
+
+networks:
+  riverflow-net:
+    driver: bridge
+
+volumes:
+  mysql_data:

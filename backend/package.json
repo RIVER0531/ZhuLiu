@@ -1,0 +1,18 @@
+{
+  "name": "riverflow-backend",
+  "version": "1.0.0",
+  "description": "心流计时器后端服务",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "node app.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^4.21.0",
+    "mysql2": "^3.11.0"
+  }
+}
