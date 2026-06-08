@@ -1,12 +1,14 @@
 <template>
-  <div class="history-page">
+  <div class="history">
     <div class="page-header">
       <div>
         <h1 class="page-title">专注历史</h1>
         <p class="page-subtitle">查看你的专注记录</p>
       </div>
-      <button class="btn-export" @click="exportCSV">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="18" height="18"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+      <button class="btn btn--outline" @click="exportCSV">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="18" height="18">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
         导出 CSV
       </button>
     </div>
@@ -16,18 +18,20 @@
       <p>加载中...</p>
     </div>
 
-    <div v-else-if="error" class="error-message">
+    <div v-else-if="error" class="error-banner">
       {{ error }}
+      <button class="btn btn--text btn--sm" @click="loadData">重试</button>
     </div>
 
     <div v-else-if="sessions.length === 0" class="empty-state">
-      <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="64" height="64" style="color: var(--md-outline)">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
       <p>还没有专注记录</p>
-      <router-link to="/" class="btn-start">开始第一次专注</router-link>
+      <router-link to="/" class="btn btn--primary">开始第一次专注</router-link>
     </div>
 
     <div v-else class="history-content">
-      <!-- 表格 -->
       <div class="card table-card">
         <table class="history-table">
           <thead>
@@ -36,22 +40,22 @@
               <th>时间</th>
               <th>标签</th>
               <th>时长</th>
-              <th></th>
+              <th class="col-action"></th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="session in sessions" :key="session.id">
-              <td class="date-cell">{{ formatDate(session.start_time) }}</td>
-              <td class="time-cell">{{ formatTimeRange(session.start_time, session.end_time) }}</td>
+            <tr v-for="s in sessions" :key="s.id">
+              <td class="cell-date">{{ formatDate(s.start_time) }}</td>
+              <td class="cell-time">{{ formatRange(s.start_time, s.end_time) }}</td>
               <td>
-                <span class="tag-chip">
-                  {{ getTagIcon(session.tag) }} {{ session.tag }}
-                </span>
+                <span class="tag-chip">{{ tagIcons[s.tag] || '✨' }} {{ s.tag }}</span>
               </td>
-              <td class="duration-cell">{{ session.duration }} 分钟</td>
+              <td class="cell-duration">{{ s.duration }} 分钟</td>
               <td>
-                <button class="btn-delete" @click="deleteSession(session.id)">
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                <button class="btn-icon" @click="deleteSession(s.id)" title="删除">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                  </svg>
                 </button>
               </td>
             </tr>
@@ -59,47 +63,31 @@
         </table>
       </div>
 
-      <!-- 分页 -->
       <div v-if="pagination.totalPages > 1" class="pagination">
-        <button 
-          class="btn-page" 
-          :disabled="pagination.page <= 1"
-          @click="loadSessions(pagination.page - 1)"
-        >
-          上一页
-        </button>
+        <button class="btn btn--outline btn--sm" :disabled="pagination.page <= 1" @click="loadData(pagination.page - 1)">上一页</button>
         <span class="page-info">{{ pagination.page }} / {{ pagination.totalPages }}</span>
-        <button 
-          class="btn-page" 
-          :disabled="pagination.page >= pagination.totalPages"
-          @click="loadSessions(pagination.page + 1)"
-        >
-          下一页
-        </button>
+        <button class="btn btn--outline btn--sm" :disabled="pagination.page >= pagination.totalPages" @click="loadData(pagination.page + 1)">下一页</button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onActivated } from 'vue';
+import { ref, onActivated } from 'vue';
+import { api } from '../api';
 
-const API_BASE = '/api';
+const tagIcons = { '工作': '💼', '学习': '📚', '阅读': '📖', '运动': '🏃', '创作': '🎨', '其他': '✨' };
+
 const sessions = ref([]);
 const loading = ref(true);
 const error = ref(null);
 const pagination = ref({ page: 1, limit: 20, total: 0, totalPages: 0 });
 
-const tagIcons = { '工作': '💼', '学习': '📚', '阅读': '📖', '运动': '🏃', '创作': '🎨', '其他': '✨' };
-const getTagIcon = (tag) => tagIcons[tag] || '✨';
-
-const loadSessions = async (page = 1) => {
+async function loadData(page = 1) {
   loading.value = true;
   error.value = null;
   try {
-    const response = await fetch(`${API_BASE}/sessions?page=${page}&limit=${pagination.value.limit}`);
-    if (!response.ok) throw new Error('加载失败');
-    const data = await response.json();
+    const data = await api.getSessions(page, pagination.value.limit);
     sessions.value = data.data;
     pagination.value = data.pagination;
   } catch (err) {
@@ -107,42 +95,53 @@ const loadSessions = async (page = 1) => {
   } finally {
     loading.value = false;
   }
-};
+}
 
-const deleteSession = async (id) => {
+async function deleteSession(id) {
   if (!confirm('确定要删除这条记录吗？')) return;
   try {
-    const response = await fetch(`${API_BASE}/sessions/${id}`, { method: 'DELETE' });
-    if (!response.ok) throw new Error('删除失败');
-    loadSessions(pagination.value.page);
-  } catch (err) { alert('删除失败，请稍后重试'); }
-};
+    await api.deleteSession(id);
+    await loadData(pagination.value.page);
+  } catch {
+    alert('删除失败，请稍后重试');
+  }
+}
 
-const exportCSV = () => { window.open(`${API_BASE}/export`, '_blank'); };
+async function exportCSV() {
+  const token = localStorage.getItem('riverflow_token');
+  const res = await fetch('/api/export', {
+    headers: { Authorization: token ? `Bearer ${token}` : '' },
+  });
+  if (!res.ok) return alert('导出失败');
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'riverflow-export.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
-const formatDate = (isoStr) => {
-  if (!isoStr) return '';
-  const date = new Date(isoStr);
-  const month = date.getMonth() + 1;
-  const day = date.getDate();
+function formatDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
   const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
-  return `${month}月${day}日 ${weekdays[date.getDay()]}`;
-};
+  return `${d.getMonth() + 1}月${d.getDate()}日 ${weekdays[d.getDay()]}`;
+}
 
-const formatTimeRange = (startStr, endStr) => {
+function formatRange(startStr, endStr) {
   if (!startStr || !endStr) return '';
-  const start = new Date(startStr);
-  const end = new Date(endStr);
-  const pad = (n) => n.toString().padStart(2, '0');
-  return `${pad(start.getHours())}:${pad(start.getMinutes())} - ${pad(end.getHours())}:${pad(end.getMinutes())}`;
-};
+  const s = new Date(startStr);
+  const e = new Date(endStr);
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${pad(s.getHours())}:${pad(s.getMinutes())} - ${pad(e.getHours())}:${pad(e.getMinutes())}`;
+}
 
-onMounted(() => { loadSessions(); });
-onActivated(() => { loadSessions(); });
+onActivated(() => loadData());
 </script>
 
 <style scoped>
-.history-page {
+.history {
   max-width: 1000px;
   margin: 0 auto;
 }
@@ -158,7 +157,6 @@ onActivated(() => { loadSessions(); });
   font-size: 28px;
   font-weight: 400;
   color: var(--md-on-surface);
-  margin: 0;
   letter-spacing: -0.5px;
 }
 
@@ -166,26 +164,6 @@ onActivated(() => { loadSessions(); });
   font-size: 14px;
   color: var(--md-on-surface-variant);
   margin-top: 4px;
-}
-
-.btn-export {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 24px;
-  border: 1px solid var(--md-outline);
-  border-radius: var(--md-radius-full);
-  background: var(--md-surface);
-  color: var(--md-primary);
-  font-family: var(--md-font);
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all var(--md-transition);
-}
-
-.btn-export:hover {
-  background: rgba(26, 115, 232, 0.04);
 }
 
 .loading-container {
@@ -196,26 +174,14 @@ onActivated(() => { loadSessions(); });
   color: var(--md-on-surface-variant);
 }
 
-.loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid var(--md-outline-variant);
-  border-top-color: var(--md-primary);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 16px;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.error-message {
-  padding: 16px;
+.error-banner {
+  padding: 16px 20px;
   background: var(--md-error-container);
   color: var(--md-error);
   border-radius: var(--md-radius-sm);
-  text-align: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .empty-state {
@@ -223,33 +189,63 @@ onActivated(() => { loadSessions(); });
   flex-direction: column;
   align-items: center;
   padding: 64px;
+  gap: 16px;
   color: var(--md-on-surface-variant);
 }
 
-.empty-icon {
-  width: 64px;
-  height: 64px;
-  margin-bottom: 16px;
-  color: var(--md-outline);
-}
-
-.btn-start {
-  margin-top: 16px;
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   padding: 10px 24px;
-  background: var(--md-primary);
-  color: white;
+  border: none;
   border-radius: var(--md-radius-full);
-  text-decoration: none;
   font-size: 14px;
   font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all var(--md-transition);
 }
 
-/* 表格 */
+.btn--outline {
+  border: 1px solid var(--md-outline);
+  background: var(--md-surface);
+  color: var(--md-primary);
+}
+
+.btn--outline:hover {
+  background: rgba(26, 115, 232, 0.04);
+}
+
+.btn--primary {
+  background: var(--md-primary);
+  color: var(--md-on-primary);
+}
+
+.btn--text {
+  background: none;
+  color: var(--md-primary);
+}
+
+.btn--text:hover {
+  background: rgba(26, 115, 232, 0.08);
+}
+
+.btn--sm {
+  padding: 8px 20px;
+}
+
+.btn:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
 .card {
   background: var(--md-surface);
   border-radius: var(--md-radius-md);
   box-shadow: var(--md-shadow-1);
   overflow: hidden;
+  animation: fadeIn 0.3s ease;
 }
 
 .history-table {
@@ -269,6 +265,10 @@ onActivated(() => { loadSessions(); });
   background: var(--md-surface-container-low);
 }
 
+.col-action {
+  width: 48px;
+}
+
 .history-table td {
   padding: 16px 20px;
   font-size: 14px;
@@ -284,15 +284,15 @@ onActivated(() => { loadSessions(); });
   background: rgba(95, 99, 104, 0.04);
 }
 
-.date-cell {
+.cell-date {
   font-weight: 500;
 }
 
-.time-cell {
+.cell-time {
   color: var(--md-on-surface-variant);
 }
 
-.duration-cell {
+.cell-duration {
   font-weight: 500;
   color: var(--md-primary);
 }
@@ -309,52 +309,30 @@ onActivated(() => { loadSessions(); });
   font-weight: 500;
 }
 
-.btn-delete {
+.btn-icon {
   background: none;
   border: none;
   padding: 8px;
   cursor: pointer;
   color: var(--md-on-surface-variant);
   border-radius: 50%;
-  transition: all var(--md-transition);
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all var(--md-transition);
 }
 
-.btn-delete:hover {
+.btn-icon:hover {
   background: var(--md-error-container);
   color: var(--md-error);
 }
 
-/* 分页 */
 .pagination {
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 16px;
   margin-top: 24px;
-}
-
-.btn-page {
-  padding: 8px 20px;
-  border: 1px solid var(--md-outline);
-  border-radius: var(--md-radius-full);
-  background: var(--md-surface);
-  color: var(--md-primary);
-  font-family: var(--md-font);
-  font-size: 14px;
-  cursor: pointer;
-  transition: all var(--md-transition);
-}
-
-.btn-page:hover:not(:disabled) {
-  background: rgba(26, 115, 232, 0.04);
-}
-
-.btn-page:disabled {
-  opacity: 0.38;
-  cursor: not-allowed;
 }
 
 .page-info {
