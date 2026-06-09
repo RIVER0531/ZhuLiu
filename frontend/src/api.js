@@ -1,6 +1,9 @@
+const isCapacitor = typeof window !== 'undefined' && !!window.Capacitor?.isNativePlatform?.();
 const BASE = import.meta.env.DEV
   ? '/api'
-  : (window.location.hostname === 'localhost' ? '/api' : 'https://rivereflow.tech/api');
+  : isCapacitor
+    ? 'https://rivereflow.tech/api'
+    : '/api';
 
 function getToken() {
   return localStorage.getItem('riverflow_token');
