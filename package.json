@@ -46,10 +46,7 @@
       {
         "from": "backend/",
         "to": "app/backend/",
-        "filter": [
-          "**/*",
-          "!node_modules"
-        ]
+        "filter": ["**/*"]
       },
       {
         "from": "frontend/dist/",
@@ -64,8 +61,7 @@
             "x64"
           ]
         }
-      ],
-      "icon": "frontend/public/favicon.png"
+      ]
     },
     "nsis": {
       "oneClick": false,
@@ -73,17 +69,13 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "逐流",
-      "installerIcon": "frontend/public/favicon.png",
-      "uninstallerIcon": "frontend/public/favicon.png"
+      "shortcutName": "逐流"
     },
     "mac": {
-      "target": "dmg",
-      "icon": "frontend/public/favicon.png"
+      "target": "dmg"
     },
     "linux": {
-      "target": "AppImage",
-      "icon": "frontend/public/favicon.png"
+      "target": "AppImage"
     }
   }
 }
