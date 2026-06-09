@@ -591,10 +591,10 @@ onMounted(() => {
 
 @media (max-width: 768px) {
   .app-bar-row {
-    padding: 12px 16px;
+    padding: 8px 12px;
     height: auto;
     flex-wrap: wrap;
-    gap: 12px;
+    gap: 8px;
   }
 
   .app-bar-leading {
@@ -602,14 +602,18 @@ onMounted(() => {
     justify-content: space-between;
   }
 
+  .logo-text { font-size: 17px; }
+  .logo-icon { width: 30px; height: 30px; }
+
   .nav-tabs {
     width: 100%;
     justify-content: space-around;
     order: 3;
+    gap: 2px;
   }
 
   .nav-tab {
-    padding: 8px 12px;
+    padding: 6px 10px;
     font-size: 12px;
   }
 
@@ -617,9 +621,17 @@ onMounted(() => {
     display: none;
   }
 
+  .nav-tab-icon { width: 16px; height: 16px; }
+
+  .app-bar-actions { gap: 0; }
+  .theme-btn { width: 36px; height: 36px; }
+
   .main-content {
-    padding: 16px;
+    padding: 12px;
   }
+
+  .titlebar { height: 24px; }
+  .tbc-btn { width: 40px; }
 }
 </style>
 

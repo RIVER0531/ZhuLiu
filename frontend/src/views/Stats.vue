@@ -138,5 +138,12 @@ onActivated(() => loadStats());
 @media (max-width: 600px) {
   .stat-grid { grid-template-columns: 1fr; }
   .page-header { flex-direction: column; align-items: flex-start; gap: 16px; }
+  .goal-header { gap: 12px; }
+  .goal-value { font-size: 22px; }
+  .goal-ring { width: 52px; height: 52px; }
+  .stat-card { padding: 16px; gap: 14px; }
+  .stat-icon { width: 44px; height: 44px; }
+  .stat-value { font-size: 17px; }
+  .period-btn { padding: 6px 16px; font-size: 13px; }
 }
 </style>

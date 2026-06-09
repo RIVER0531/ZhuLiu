@@ -432,5 +432,19 @@ onActivated(() => {
     align-items: flex-start;
     gap: 16px;
   }
+
+  .summary-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .chart-wrapper { height: 180px; }
+  .chart-y-axis { width: 40px; font-size: 10px; }
+  .chart-bars { gap: 2px; }
+  .segment { padding: 8px 18px; font-size: 13px; }
+  .summary-card { padding: 16px; gap: 12px; }
+  .summary-icon { width: 40px; height: 40px; }
+  .summary-value { font-size: 16px; }
 }
 </style>

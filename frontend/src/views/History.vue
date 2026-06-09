@@ -408,4 +408,18 @@ onActivated(() => loadData());
 .dialog-enter-active { animation: fadeIn 0.2s ease; }
 .dialog-leave-active { transition: opacity 0.15s ease; }
 .dialog-leave-to { opacity: 0; }
+
+@media (max-width: 768px) {
+  .page-header { flex-direction: column; align-items: flex-start; gap: 16px; }
+  .history-table th, .history-table td { padding: 10px 12px; font-size: 13px; }
+  .tag-chip { padding: 3px 8px; font-size: 11px; }
+  .btn { padding: 8px 16px; font-size: 13px; }
+}
+
+@media (max-width: 480px) {
+  .page-title { font-size: 22px; }
+  .page-subtitle { font-size: 13px; }
+  .history-table th, .history-table td { padding: 8px 8px; font-size: 12px; }
+  .cell-date { white-space: nowrap; }
+}
 </style>

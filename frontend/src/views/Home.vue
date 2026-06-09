@@ -481,8 +481,25 @@ onDeactivated(() => { document.removeEventListener('keydown', handleKey); });
 @media (max-width: 800px) {
   .home-layout { grid-template-columns: 1fr; }
   .side-section { position: static; }
-  .time-value { font-size: 56px; }
-  .time-colon { font-size: 48px; }
+  .time-value { font-size: 48px; }
+  .time-colon { font-size: 40px; }
   .heatmap-grid-wrapper { max-width: calc(100vw - 48px); }
+  .timer-card { padding: 32px 16px; }
+  .chip-group { gap: 6px; }
+  .chip { padding: 6px 14px; font-size: 13px; }
+  .timer-display { margin-bottom: 32px; }
+  .btn--lg { padding: 14px 36px; font-size: 15px; }
+  .goal-progress-text { font-size: 20px; }
+  .goal-badge { width: 48px; height: 48px; font-size: 14px; }
+}
+
+@media (max-width: 480px) {
+  .time-value { font-size: 40px; }
+  .time-colon { font-size: 32px; padding-bottom: 20px; }
+  .time-segment { min-width: 60px; }
+  .timer-card { padding: 24px 12px; }
+  .timer-title { font-size: 22px; }
+  .chip { padding: 5px 10px; font-size: 12px; }
+  .stat-row-label, .stat-row-value { font-size: 13px; }
 }
 </style>

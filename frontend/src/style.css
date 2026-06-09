@@ -185,3 +185,22 @@ a {
 textarea {
   resize: vertical;
 }
+
+@media (max-width: 768px) {
+  html { font-size: 14px; }
+
+  .dialog { padding: 24px; width: 90vw; }
+  .dialog-title { font-size: 18px; }
+  .dialog-body { gap: 16px; }
+  .dialog-actions { margin-top: 24px; }
+
+  .text-field input, .text-field select, .text-field textarea {
+    padding: 10px 14px;
+    font-size: 15px;
+  }
+
+  .btn { padding: 8px 18px; font-size: 13px; }
+  .btn--lg { padding: 12px 32px; font-size: 14px; }
+
+  .loading-spinner { width: 32px; height: 32px; }
+}
