@@ -170,11 +170,13 @@
 import { computed, inject, ref, onActivated, onDeactivated } from 'vue';
 import { api } from '../api';
 import { authStore } from '../stores/auth';
+import { formatDuration } from '../utils/format';
+import { TAGS, TAG_ICONS } from '../constants/tags';
 
 const timerStore = inject('timerStore');
 
-const tags = ['工作', '学习', '阅读', '运动', '创作', '其他'];
-const tagIcons = { '工作': '💼', '学习': '📚', '阅读': '📖', '运动': '🏃', '创作': '🎨', '其他': '✨' };
+const tags = TAGS;
+const tagIcons = TAG_ICONS;
 
 const currentTag = ref(timerStore.state.tag || '工作');
 
@@ -292,15 +294,16 @@ async function stopTimer() {
 const pendingSession = ref(null);
 
 async function saveNote() {
-  showNoteDialog.value = false;
   if (!pendingSession.value) return;
+  const session = pendingSession.value;
+  pendingSession.value = null;
+  showNoteDialog.value = false;
 
   try {
-    await api.createSession({ ...pendingSession.value, note: noteText.value.trim() || null });
-    pendingSession.value = null;
+    await api.createSession({ ...session, note: noteText.value.trim() || null });
     noteText.value = '';
     showMessage(`已保存 ${savedDuration.value} 分钟的${savedTag.value}记录`, 'success');
-    await loadStats();
+    await Promise.all([loadStats(), loadHeatmap()]);
   } catch (err) { showMessage(err.message, 'error'); }
 }
 
@@ -310,18 +313,21 @@ function showMessage(text, type) {
   setTimeout(() => { message.value = ''; }, 5000);
 }
 
-function formatDuration(mins) {
-  if (!mins) return '0 分钟';
-  const h = Math.floor(mins / 60);
-  const m = mins % 60;
-  if (h > 0 && m > 0) return `${h} 小时 ${m} 分钟`;
-  if (h > 0) return `${h} 小时`;
-  return `${m} 分钟`;
-}
-
 async function loadStats() { try { stats.value = await api.getStats(); } catch { /* ignore */ } }
 async function loadGoals() { try { goalForm.value = await api.getGoals(); } catch { /* ignore */ } }
-async function loadHeatmap() { try { heatmap.value = await api.getHeatmap(365); } catch { /* ignore */ } }
+
+let heatmapCache = { data: null, timestamp: 0 };
+async function loadHeatmap() {
+  try {
+    if (heatmapCache.data && Date.now() - heatmapCache.timestamp < 300000) {
+      heatmap.value = heatmapCache.data;
+      return;
+    }
+    const data = await api.getHeatmap(365);
+    heatmap.value = data;
+    heatmapCache = { data, timestamp: Date.now() };
+  } catch { /* ignore */ }
+}
 
 async function saveGoals() {
   try { await api.updateGoals(goalForm.value); showGoalSettings.value = false; await loadStats(); } catch (err) { showMessage(err.message, 'error'); }
@@ -331,7 +337,12 @@ function handleKey(e) {
   if (e.code === 'Space' && e.target === document.body) {
     if (showGoalSettings.value || showNoteDialog.value) return;
     e.preventDefault();
-    timerStore.state.isRunning ? stopTimer() : startTimer();
+    if (timerStore.state.isRunning) {
+      if (pendingSession.value) return;
+      stopTimer();
+    } else {
+      startTimer();
+    }
   }
 }
 
@@ -426,7 +437,7 @@ onDeactivated(() => { document.removeEventListener('keydown', handleKey); });
 .heatmap-day-label:nth-child(4) { grid-row: 7; }
 
 .heatmap-grid { display: grid; grid-template-rows: repeat(7, 14px); gap: 2px; }
-.heatmap-cell { width: 14px; height: 14px; border-radius: 2px; }
+.heatmap-cell { width: 14px; height: 14px; border-radius: 2px; content-visibility: auto; }
 .heatmap-cell--l0 { background: var(--md-surface-container); }
 .heatmap-cell--l1 { background: #9be9a8; }
 .heatmap-cell--l2 { background: #40c463; }

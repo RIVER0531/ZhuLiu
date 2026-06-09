@@ -26,5 +26,10 @@ build/
 
 # Database
 *.db
+*.db-shm
+*.db-wal
 *.sqlite
-fuwuqi/ 
+fuwuqi/
+
+# Deployment archives
+*.tar.gz

@@ -1,19 +1,14 @@
 {
   "name": "riverflow-backend",
   "version": "1.0.0",
-  "description": "心流计时器后端服务",
+  "description": "Riverflow backend with SQLite",
   "main": "app.js",
   "scripts": {
-    "start": "node app.js",
-    "dev": "node app.js"
+    "start": "node app.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
     "cors": "^2.8.6",
-    "dotenv": "^17.4.2",
     "express": "^4.21.0",
-    "mysql2": "^3.11.0"
+    "better-sqlite3": "^11.0.0"
   }
 }

@@ -103,10 +103,10 @@ const router = useRouter();
 
 const tabs = [
   { path: '/', label: '专注', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
-  { path: '/pomodoro', label: '番茄', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
+  { path: '/pomodoro', label: '番茄', icon: 'M12 7v4l2.5 2.5M15 3h-6m3 0V1m6.36 3.64l-.71.71M20 12h-2M4 12H2m3.64-6.36l-.71-.71M12 21a7 7 0 100-14 7 7 0 000 14z' },
   { path: '/chart', label: '图表', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
-  { path: '/stats', label: '统计', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
-  { path: '/history', label: '历史', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
+  { path: '/stats', label: '统计', icon: 'M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z' },
+  { path: '/history', label: '历史', icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253' },
 ];
 
 const theme = ref(localStorage.getItem('theme') || 'light');
@@ -123,11 +123,12 @@ const presets = [
 
 const bgStyle = computed(() => {
   if (!bgImage.value) return {};
+  const isMobile = window.innerWidth <= 768;
   return {
     backgroundImage: `url(${bgImage.value})`,
     backgroundSize: 'cover',
     backgroundPosition: 'center',
-    backgroundAttachment: 'fixed',
+    backgroundAttachment: isMobile ? 'scroll' : 'fixed',
   };
 });
 
@@ -189,6 +190,18 @@ onMounted(() => {
   initAuth();
   requestNotification();
   document.documentElement.setAttribute('data-theme', theme.value);
+
+  window.addEventListener('beforeunload', (e) => {
+    if (timerStore.state.isRunning) {
+      e.preventDefault();
+      e.returnValue = '';
+    }
+  });
+
+  window.addEventListener('auth:logout', () => {
+    authStore.logout();
+    router.push('/login');
+  });
 });
 </script>
 
@@ -544,7 +557,8 @@ onMounted(() => {
 <style>
 .app-bg-overlay .card,
 .app-bg-overlay .heatmap-card,
-.app-bg-overlay .login-card .login-form,
+.app-bg-overlay .login-card,
+.app-bg-overlay .login-form,
 .app-bg-overlay .sound-panel {
   background: rgba(255, 255, 255, 0.92) !important;
   backdrop-filter: blur(12px);

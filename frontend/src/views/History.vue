@@ -13,6 +13,10 @@
       </button>
     </div>
 
+    <Transition name="snackbar">
+      <div v-if="exportMessage" class="snackbar snackbar--error" @click="exportMessage = ''">{{ exportMessage }}</div>
+    </Transition>
+
     <div v-if="loading" class="loading-container">
       <div class="loading-spinner"></div>
       <p>加载中...</p>
@@ -52,7 +56,7 @@
               </td>
               <td class="cell-duration">{{ s.duration }} 分钟</td>
               <td>
-                <button class="btn-icon" @click="deleteSession(s.id)" title="删除">
+                <button class="btn-icon" @click="confirmDelete(s.id)" title="删除">
                   <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                   </svg>
@@ -69,22 +73,43 @@
         <button class="btn btn--outline btn--sm" :disabled="pagination.page >= pagination.totalPages" @click="loadData(pagination.page + 1)">下一页</button>
       </div>
     </div>
+
+    <Teleport to="body">
+      <Transition name="dialog">
+        <div v-if="showDeleteDialog" class="dialog-scrim" @click.self="showDeleteDialog = false">
+          <div class="dialog">
+            <h3 class="dialog-title">确认删除</h3>
+            <p class="dialog-desc">确定要删除这条专注记录吗？此操作不可撤销。</p>
+            <p v-if="deleteError" class="dialog-error">{{ deleteError }}</p>
+            <div class="dialog-actions">
+              <button class="btn btn--text" @click="showDeleteDialog = false">取消</button>
+              <button class="btn btn--danger" @click="executeDelete">删除</button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
 import { ref, onActivated } from 'vue';
 import { api } from '../api';
+import { TAG_ICONS } from '../constants/tags';
 
-const tagIcons = { '工作': '💼', '学习': '📚', '阅读': '📖', '运动': '🏃', '创作': '🎨', '其他': '✨' };
+const tagIcons = TAG_ICONS;
 
 const sessions = ref([]);
-const loading = ref(true);
+const loading = ref(false);
 const error = ref(null);
 const pagination = ref({ page: 1, limit: 20, total: 0, totalPages: 0 });
+const showDeleteDialog = ref(false);
+const deleteTargetId = ref(null);
+const deleteError = ref('');
+const exportMessage = ref('');
 
 async function loadData(page = 1) {
-  loading.value = true;
+  if (!sessions.value.length) loading.value = true;
   error.value = null;
   try {
     const data = await api.getSessions(page, pagination.value.limit);
@@ -97,42 +122,68 @@ async function loadData(page = 1) {
   }
 }
 
-async function deleteSession(id) {
-  if (!confirm('确定要删除这条记录吗？')) return;
+function confirmDelete(id) {
+  deleteTargetId.value = id;
+  deleteError.value = '';
+  showDeleteDialog.value = true;
+}
+
+async function executeDelete() {
+  if (!deleteTargetId.value) return;
   try {
-    await api.deleteSession(id);
-    await loadData(pagination.value.page);
+    await api.deleteSession(deleteTargetId.value);
+    showDeleteDialog.value = false;
+    deleteTargetId.value = null;
+    const page = sessions.value.length === 1 && pagination.value.page > 1
+      ? pagination.value.page - 1
+      : pagination.value.page;
+    await loadData(page);
   } catch {
-    alert('删除失败，请稍后重试');
+    deleteError.value = '删除失败，请稍后重试';
   }
 }
 
 async function exportCSV() {
   const token = localStorage.getItem('riverflow_token');
-  const res = await fetch('/api/export', {
-    headers: { Authorization: token ? `Bearer ${token}` : '' },
-  });
-  if (!res.ok) return alert('导出失败');
-  const blob = await res.blob();
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'riverflow-export.csv';
-  a.click();
-  URL.revokeObjectURL(url);
+  try {
+    const res = await fetch('/api/export', {
+      headers: { Authorization: token ? `Bearer ${token}` : '' },
+    });
+    if (res.status === 401) {
+      localStorage.removeItem('riverflow_token');
+      window.dispatchEvent(new Event('auth:logout'));
+      return;
+    }
+    if (!res.ok) { exportMessage.value = '导出失败'; setTimeout(() => { exportMessage.value = ''; }, 5000); return; }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'riverflow-export.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch {
+    exportMessage.value = '导出失败，请检查网络连接';
+    setTimeout(() => { exportMessage.value = ''; }, 5000);
+  }
 }
 
-function formatDate(iso) {
-  if (!iso) return '';
-  const d = new Date(iso);
+function parseLocal(str) {
+  if (!str) return new Date();
+  return new Date(str.replace(/-/g, '/'));
+}
+
+function formatDate(timeStr) {
+  if (!timeStr) return '';
+  const d = parseLocal(timeStr);
   const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
   return `${d.getMonth() + 1}月${d.getDate()}日 ${weekdays[d.getDay()]}`;
 }
 
 function formatRange(startStr, endStr) {
   if (!startStr || !endStr) return '';
-  const s = new Date(startStr);
-  const e = new Date(endStr);
+  const s = parseLocal(startStr);
+  const e = parseLocal(endStr);
   const pad = (n) => String(n).padStart(2, '0');
   return `${pad(s.getHours())}:${pad(s.getMinutes())} - ${pad(e.getHours())}:${pad(e.getMinutes())}`;
 }
@@ -244,7 +295,7 @@ onActivated(() => loadData());
   background: var(--md-surface);
   border-radius: var(--md-radius-md);
   box-shadow: var(--md-shadow-1);
-  overflow: hidden;
+  overflow-x: auto;
   animation: fadeIn 0.3s ease;
 }
 
@@ -339,4 +390,22 @@ onActivated(() => loadData());
   font-size: 14px;
   color: var(--md-on-surface-variant);
 }
+
+.snackbar { padding: 12px 20px; border-radius: var(--md-radius-sm); font-size: 14px; margin-bottom: 16px; cursor: pointer; }
+.snackbar--success { background: #e6f4ea; color: #137333; }
+.snackbar--error { background: #fce8e6; color: #c5221f; }
+.snackbar--warning { background: #fef7e0; color: #b06000; }
+.snackbar-enter-active { animation: fadeIn 0.3s ease; }
+.snackbar-leave-active { transition: opacity 0.2s; }
+.snackbar-leave-to { opacity: 0; }
+
+.dialog-scrim { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+.dialog { background: var(--md-surface); border-radius: var(--md-radius-xl); padding: 32px; width: 400px; max-width: 90vw; box-shadow: var(--md-shadow-3); }
+.dialog-title { font-size: 20px; font-weight: 500; color: var(--md-on-surface); margin-bottom: 12px; }
+.dialog-desc { font-size: 14px; color: var(--md-on-surface-variant); margin-bottom: 16px; }
+.dialog-error { font-size: 13px; color: var(--md-error); margin-bottom: 12px; }
+.dialog-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+.dialog-enter-active { animation: fadeIn 0.2s ease; }
+.dialog-leave-active { transition: opacity 0.15s ease; }
+.dialog-leave-to { opacity: 0; }
 </style>

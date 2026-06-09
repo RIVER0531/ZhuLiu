@@ -15,7 +15,7 @@ async function request(url, options = {}) {
   if (!res.ok) {
     if (res.status === 401 && !url.startsWith('/auth')) {
       localStorage.removeItem('riverflow_token');
-      window.location.href = '/login';
+      window.dispatchEvent(new Event('auth:logout'));
     }
     throw new Error(body.error || `请求失败 (${res.status})`);
   }

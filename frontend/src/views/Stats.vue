@@ -63,33 +63,26 @@
 <script setup>
 import { ref, computed, onActivated } from 'vue';
 import { api } from '../api';
+import { formatDuration } from '../utils/format';
 
 const period = ref('month');
-const stats = ref({ daily: 0, weekly: 0, monthly: 0, total: 0, daily_count: 0, total_count: 0, weekly_count: 0, daily_goal: 120, weekly_goal: 600 });
-const loading = ref(true);
+const stats = ref(null);
+const loading = ref(false);
 const error = ref(null);
 
 const periodLabel = computed(() => ({ day: '今日', week: '本周', month: '本月' })[period.value]);
-const currentValue = computed(() => stats.value[period.value === 'day' ? 'daily' : period.value === 'week' ? 'weekly' : 'monthly'] || 0);
-const currentGoal = computed(() => period.value === 'day' ? stats.value.daily_goal : stats.value.weekly_goal);
-const currentCount = computed(() => period.value === 'week' ? stats.value.weekly_count : period.value === 'month' ? stats.value.monthly_count : stats.value.daily_count);
+const currentValue = computed(() => stats.value?.[period.value === 'day' ? 'daily' : period.value === 'week' ? 'weekly' : 'monthly'] || 0);
+const currentGoal = computed(() => period.value === 'day' ? stats.value?.daily_goal : stats.value?.weekly_goal);
+const currentCount = computed(() => period.value === 'week' ? stats.value?.weekly_count : period.value === 'month' ? stats.value?.monthly_count : stats.value?.daily_count);
 const goalPercent = computed(() => currentGoal.value ? (currentValue.value / currentGoal.value) * 100 : 0);
 
 async function loadStats() {
-  loading.value = true; error.value = null;
+  if (!stats.value) loading.value = true;
+  error.value = null;
   try { stats.value = await api.getStats(period.value); } catch (err) { error.value = '无法加载统计数据，请确保服务器正在运行'; } finally { loading.value = false; }
 }
 
 function switchPeriod(p) { period.value = p; loadStats(); }
-
-function formatDuration(mins) {
-  if (!mins) return '0 分钟';
-  const h = Math.floor(mins / 60);
-  const m = mins % 60;
-  if (h > 0 && m > 0) return `${h} 小时 ${m} 分钟`;
-  if (h > 0) return `${h} 小时`;
-  return `${m} 分钟`;
-}
 
 onActivated(() => loadStats());
 </script>
@@ -129,6 +122,10 @@ onActivated(() => loadStats());
 .stat-icon--blue { background: #e8f0fe; color: #1a73e8; }
 .stat-icon--red { background: #fce8e6; color: #ea4335; }
 .stat-icon--green { background: #e6f4ea; color: #137333; }
+
+[data-theme="dark"] .stat-icon--blue { background: rgba(138,180,248,0.15); color: #8ab4f8; }
+[data-theme="dark"] .stat-icon--red { background: rgba(242,139,130,0.15); color: #f28b82; }
+[data-theme="dark"] .stat-icon--green { background: rgba(129,201,149,0.15); color: #81c995; }
 .stat-info { display: flex; flex-direction: column; gap: 4px; }
 .stat-label { font-size: 12px; font-weight: 500; color: var(--md-on-surface-variant); text-transform: uppercase; letter-spacing: 0.5px; }
 .stat-value { font-size: 20px; font-weight: 500; color: var(--md-on-surface); }

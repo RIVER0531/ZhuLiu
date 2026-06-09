@@ -55,9 +55,13 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onActivated } from 'vue';
+import { ref, computed, watch, onActivated, onDeactivated } from 'vue';
+import { api } from '../api';
 
 const STORAGE_KEY = 'pomodoro_state';
+const TOTAL_KEY = 'pomodoro_total';
+const TODAY_KEY = 'pomodoro_today';
+const DATE_KEY = 'pomodoro_date';
 
 const workMinutes = ref(25);
 const breakMinutes = ref(5);
@@ -65,11 +69,15 @@ const totalSeconds = ref(25 * 60);
 const remainingSeconds = ref(25 * 60);
 const isRunning = ref(false);
 const currentPhase = ref('work');
-const completedPomodoros = ref(0);
-const todayPomodoros = ref(parseInt(localStorage.getItem('pomodoro_today') || '0', 10));
+const completedPomodoros = ref(parseInt(localStorage.getItem(TOTAL_KEY) || '0', 10));
+const todayPomodoros = ref(parseInt(localStorage.getItem(TODAY_KEY) || '0', 10));
 
 let timerInterval = null;
 let completing = false;
+let workStartTime = null;
+
+let audioCtx = null;
+let audioGain = null;
 
 const formattedMinutes = computed(() => String(Math.floor(remainingSeconds.value / 60)).padStart(2, '0'));
 const formattedSeconds = computed(() => String(remainingSeconds.value % 60).padStart(2, '0'));
@@ -87,7 +95,7 @@ function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify({
     remainingSeconds: remainingSeconds.value, totalSeconds: totalSeconds.value,
     currentPhase: currentPhase.value, completedPomodoros: completedPomodoros.value,
-    isRunning: isRunning.value, savedAt: Date.now(),
+    isRunning: isRunning.value, savedAt: Date.now(), workStartTime,
   }));
 }
 
@@ -98,7 +106,8 @@ function restoreState() {
     const state = JSON.parse(saved);
     const elapsed = Math.floor((Date.now() - state.savedAt) / 1000);
     currentPhase.value = state.currentPhase;
-    completedPomodoros.value = state.completedPomodoros;
+    completedPomodoros.value = state.completedPomodoros || 0;
+    workStartTime = state.workStartTime || null;
     if (state.isRunning) {
       const newRemaining = state.remainingSeconds - elapsed;
       if (newRemaining > 0) { remainingSeconds.value = newRemaining; totalSeconds.value = state.totalSeconds; start(); }
@@ -109,6 +118,10 @@ function restoreState() {
 
 function start() {
   isRunning.value = true;
+  if (currentPhase.value === 'work' && !workStartTime) {
+    workStartTime = Date.now();
+  }
+  clearInterval(timerInterval);
   saveState();
   timerInterval = setInterval(() => {
     if (remainingSeconds.value > 0) {
@@ -125,10 +138,11 @@ function reset() {
   currentPhase.value = 'work';
   totalSeconds.value = workMinutes.value * 60;
   remainingSeconds.value = totalSeconds.value;
+  workStartTime = null;
   localStorage.removeItem(STORAGE_KEY);
 }
 
-function completePhase() {
+async function completePhase() {
   if (completing) return;
   completing = true;
   pause();
@@ -136,11 +150,28 @@ function completePhase() {
   if (currentPhase.value === 'work') {
     completedPomodoros.value++;
     todayPomodoros.value++;
-    localStorage.setItem('pomodoro_today', String(todayPomodoros.value));
+    localStorage.setItem(TOTAL_KEY, String(completedPomodoros.value));
+    localStorage.setItem(TODAY_KEY, String(todayPomodoros.value));
+
+    const endTime = Date.now();
+    const durationMinutes = Math.round(totalSeconds.value / 60);
+    if (workStartTime && durationMinutes >= 1) {
+      try {
+        await api.createSession({
+          startTime: new Date(workStartTime).toISOString(),
+          endTime: new Date(endTime).toISOString(),
+          duration: durationMinutes,
+          tag: '工作',
+          note: '番茄钟自动记录',
+        });
+      } catch { /* silent */ }
+    }
+
     beep();
     notify('番茄完成！🍅', '该休息一下了');
     currentPhase.value = 'break';
     totalSeconds.value = breakMinutes.value * 60;
+    workStartTime = null;
   } else {
     notify('休息结束', '开始新的番茄钟吧');
     currentPhase.value = 'work';
@@ -153,25 +184,27 @@ function completePhase() {
 
 function beep() {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      audioGain = audioCtx.createGain();
+      audioGain.connect(audioCtx.destination);
+    }
+    const osc = audioCtx.createOscillator();
+    osc.connect(audioGain);
+    audioGain.gain.value = 0.3;
     osc.frequency.value = 800;
-    gain.gain.value = 0.3;
     osc.start();
-    osc.stop(ctx.currentTime + 0.5);
+    osc.stop(audioCtx.currentTime + 0.5);
   } catch { /* ignore */ }
 }
 
 function checkNewDay() {
-  const lastDate = localStorage.getItem('pomodoro_date');
+  const lastDate = localStorage.getItem(DATE_KEY);
   const now = new Date();
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   if (lastDate !== today) {
-    localStorage.setItem('pomodoro_date', today);
-    localStorage.setItem('pomodoro_today', '0');
+    localStorage.setItem(DATE_KEY, today);
+    localStorage.setItem(TODAY_KEY, '0');
     todayPomodoros.value = 0;
     localStorage.removeItem(STORAGE_KEY);
   }
@@ -185,10 +218,16 @@ watch([workMinutes, breakMinutes], ([w, b]) => {
 });
 
 checkNewDay();
-restoreState();
 
 onActivated(() => {
   checkNewDay();
+  restoreState();
+});
+
+onDeactivated(() => {
+  saveState();
+  clearInterval(timerInterval);
+  timerInterval = null;
 });
 </script>
 

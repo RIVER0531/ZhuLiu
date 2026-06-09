@@ -1,43 +1,41 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import Home from '../views/Home.vue'
-import Stats from '../views/Stats.vue'
-import History from '../views/History.vue'
-import Chart from '../views/Chart.vue'
-import Pomodoro from '../views/Pomodoro.vue'
-import Login from '../views/Login.vue'
 import { authStore } from '../stores/auth'
 
 const routes = [
-  { path: '/login', name: 'login', component: Login },
+  { path: '/login', name: 'login', component: () => import('../views/Login.vue') },
   {
     path: '/',
     name: 'home',
-    component: Home,
+    component: () => import('../views/Home.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/stats',
     name: 'stats',
-    component: Stats,
+    component: () => import('../views/Stats.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/history',
     name: 'history',
-    component: History,
+    component: () => import('../views/History.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/chart',
     name: 'chart',
-    component: Chart,
+    component: () => import('../views/Chart.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/pomodoro',
     name: 'pomodoro',
-    component: Pomodoro,
+    component: () => import('../views/Pomodoro.vue'),
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: '/'
   }
 ]
 

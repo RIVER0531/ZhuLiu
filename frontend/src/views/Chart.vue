@@ -103,6 +103,7 @@
 <script setup>
 import { ref, computed, onActivated } from 'vue';
 import { api } from '../api';
+import { formatDuration } from '../utils/format';
 
 const period = ref(7);
 const chartData = ref([]);
@@ -113,9 +114,8 @@ const maxMinutes = computed(() => chartData.value.length ? Math.ceil(Math.max(..
 const totalMinutes = computed(() => chartData.value.reduce((s, d) => s + d.minutes, 0));
 const totalCount = computed(() => chartData.value.reduce((s, d) => s + d.count, 0));
 const avgMinutes = computed(() => {
-  const activeDays = chartData.value.filter(d => d.minutes > 0);
-  if (!activeDays.length) return 0;
-  return Math.round(totalMinutes.value / activeDays.length);
+  if (!chartData.value.length) return 0;
+  return Math.round(totalMinutes.value / chartData.value.length);
 });
 
 function barHeight(minutes) { return maxMinutes.value ? (minutes / maxMinutes.value) * 100 : 0; }
@@ -129,17 +129,8 @@ function isToday(dateStr) {
 
 function formatDate(dateStr, index) {
   if (period.value === 30 && index % 5 !== 0 && index !== chartData.value.length - 1) return '';
-  const d = new Date(dateStr);
+  const d = new Date(dateStr.replace(/-/g, '/'));
   return `${d.getMonth() + 1}/${d.getDate()}`;
-}
-
-function formatDuration(mins) {
-  if (!mins) return '0 分钟';
-  const h = Math.floor(mins / 60);
-  const m = Math.round(mins % 60);
-  if (h > 0 && m > 0) return `${h} 小时 ${m} 分`;
-  if (h > 0) return `${h} 小时`;
-  return `${m} 分钟`;
 }
 
 async function changePeriod(days) {
@@ -364,6 +355,10 @@ onActivated(() => {
 .summary-icon--blue   { background: #e8f0fe; color: #1a73e8; }
 .summary-icon--green  { background: #e6f4ea; color: #137333; }
 .summary-icon--purple { background: #f3e8fd; color: #8430ce; }
+
+[data-theme="dark"] .summary-icon--blue   { background: rgba(138,180,248,0.15); color: #8ab4f8; }
+[data-theme="dark"] .summary-icon--green  { background: rgba(129,201,149,0.15); color: #81c995; }
+[data-theme="dark"] .summary-icon--purple { background: rgba(206,147,216,0.15); color: #ce93d8; }
 
 .summary-label {
   font-size: 12px;
