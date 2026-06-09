@@ -303,7 +303,7 @@ async function saveNote() {
     await api.createSession({ ...session, note: noteText.value.trim() || null });
     noteText.value = '';
     showMessage(`已保存 ${savedDuration.value} 分钟的${savedTag.value}记录`, 'success');
-    await Promise.all([loadStats(), loadHeatmap()]);
+    await Promise.all([loadStats(), loadHeatmap(true)]);
   } catch (err) { showMessage(err.message, 'error'); }
 }
 
@@ -317,9 +317,9 @@ async function loadStats() { try { stats.value = await api.getStats(); } catch {
 async function loadGoals() { try { goalForm.value = await api.getGoals(); } catch { /* ignore */ } }
 
 let heatmapCache = { data: null, timestamp: 0 };
-async function loadHeatmap() {
+async function loadHeatmap(force = false) {
   try {
-    if (heatmapCache.data && Date.now() - heatmapCache.timestamp < 300000) {
+    if (!force && heatmapCache.data && Date.now() - heatmapCache.timestamp < 300000) {
       heatmap.value = heatmapCache.data;
       return;
     }
