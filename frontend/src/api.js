@@ -1,7 +1,9 @@
 const isCapacitor = typeof window !== 'undefined' && !!window.Capacitor?.isNativePlatform?.();
+const isElectron = typeof window !== 'undefined' && !!window.electronAPI?.isElectron;
+const isNative = isCapacitor || isElectron;
 const BASE = import.meta.env.DEV
   ? '/api'
-  : isCapacitor
+  : isNative
     ? 'http://rivereflow.tech/api'
     : '/api';
 
