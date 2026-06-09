@@ -1,4 +1,6 @@
-const BASE = '/api';
+const BASE = import.meta.env.DEV
+  ? '/api'
+  : (window.location.hostname === 'localhost' ? '/api' : 'https://rivereflow.tech/api');
 
 function getToken() {
   return localStorage.getItem('riverflow_token');
