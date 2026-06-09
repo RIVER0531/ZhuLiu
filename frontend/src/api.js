@@ -2,7 +2,7 @@ const isCapacitor = typeof window !== 'undefined' && !!window.Capacitor?.isNativ
 const BASE = import.meta.env.DEV
   ? '/api'
   : isCapacitor
-    ? 'https://rivereflow.tech/api'
+    ? 'http://rivereflow.tech/api'
     : '/api';
 
 function getToken() {
