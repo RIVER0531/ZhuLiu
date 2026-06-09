@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: '逐流',
   webDir: 'dist',
   server: {
-    androidScheme: 'https',
+    androidScheme: 'http',
     cleartext: true,
   },
 };
