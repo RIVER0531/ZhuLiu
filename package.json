@@ -1,0 +1,89 @@
+{
+  "name": "riverflow",
+  "version": "4.0.0",
+  "description": "逐流 - 专注计时器",
+  "main": "electron/main.js",
+  "author": "Peng Xiujiang",
+  "license": "MIT",
+  "scripts": {
+    "dev": "concurrently \"cd backend && node app.js\" \"cd frontend && npm run dev\"",
+    "dev:electron": "cd frontend && npm run build && cd .. && electron .",
+    "build:frontend": "cd frontend && npm run build",
+    "start": "electron .",
+    "pack": "cd frontend && npm run build && cd .. && electron-builder --dir",
+    "dist": "cd frontend && npm run build && cd .. && electron-builder",
+    "dist:win": "cd frontend && npm run build && cd .. && electron-builder --win"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.0.0",
+    "cors": "^2.8.6",
+    "express": "^4.21.0"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^4.0.4",
+    "concurrently": "^9.0.0",
+    "electron": "^35.7.5",
+    "electron-builder": "^26.0.0"
+  },
+  "build": {
+    "appId": "com.riverflow.app",
+    "productName": "逐流",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "electron/**/*",
+      "backend/**/*",
+      "frontend/dist/**/*",
+      "!frontend/node_modules",
+      "!backend/node_modules",
+      "!release",
+      "!.git",
+      "!*.tar.gz",
+      "!fuwuqi"
+    ],
+    "extraResources": [
+      {
+        "from": "backend/",
+        "to": "app/backend/",
+        "filter": [
+          "**/*",
+          "!node_modules"
+        ]
+      },
+      {
+        "from": "frontend/dist/",
+        "to": "app/frontend/dist/"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "frontend/public/favicon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "逐流",
+      "installerIcon": "frontend/public/favicon.png",
+      "uninstallerIcon": "frontend/public/favicon.png"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "frontend/public/favicon.png"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "frontend/public/favicon.png"
+    }
+  }
+}

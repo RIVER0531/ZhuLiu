@@ -92,7 +92,7 @@ function authMiddleware(req, res, next) {
 }
 
 app.use((req, _res, next) => {
-  if (req.path.startsWith('/api/auth') || req.path === '/api/health' || req.path === '/') {
+  if (!req.path.startsWith('/api') || req.path.startsWith('/api/auth') || req.path === '/api/health') {
     return next();
   }
   authMiddleware(req, _res, next);
@@ -305,9 +305,19 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
-app.get('/', (_req, res) => {
-  res.json({ name: 'Riverflow API', version: '3.0.0' });
-});
+// ── 生产模式：serve 前端静态文件 ──
+
+if (process.env.ELECTRON === 'true' || process.env.NODE_ENV === 'production') {
+  const frontendDist = process.env.FRONTEND_DIST || path.join(__dirname, '..', 'frontend', 'dist');
+  app.use(express.static(frontendDist));
+  app.get('*', (_req, res) => {
+    res.sendFile(path.join(frontendDist, 'index.html'));
+  });
+} else {
+  app.get('/', (_req, res) => {
+    res.json({ name: 'Riverflow API', version: '4.0.0' });
+  });
+}
 
 app.use((err, req, res, _next) => {
   console.error(`[${new Date().toLocaleString('zh-CN')}] ${req.method} ${req.path}:`, err.message);

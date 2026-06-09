@@ -1,5 +1,20 @@
 <template>
   <div class="app-container" :class="{ 'app-bg-overlay': bgImage }" :data-theme="theme" :style="bgStyle">
+    <div v-if="isElectron" class="titlebar">
+      <div class="titlebar-drag-region"></div>
+      <div class="titlebar-controls">
+        <button class="tbc-btn" @click="winMinimize">
+          <svg viewBox="0 0 12 12" width="12" height="12"><path d="M2 6h8" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        </button>
+        <button class="tbc-btn" @click="winMaximize">
+          <svg viewBox="0 0 12 12" width="12" height="12"><rect x="1.5" y="1.5" width="9" height="9" rx="1" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
+        </button>
+        <button class="tbc-btn tbc-close" @click="winClose">
+          <svg viewBox="0 0 12 12" width="12" height="12"><path d="M3 3l6 6M9 3l-6 6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+    </div>
+
     <header class="top-app-bar">
       <div class="app-bar-row">
         <div class="app-bar-leading">
@@ -101,6 +116,13 @@ import SoundPlayer from './components/SoundPlayer.vue';
 provide('timerStore', timerStore);
 const router = useRouter();
 
+const isElectron = ref(window.electronAPI?.isElectron ?? false);
+const isMaximized = ref(true);
+
+function winMinimize() { window.electronAPI?.window?.minimize(); }
+function winMaximize() { window.electronAPI?.window?.maximize(); }
+function winClose() { window.electronAPI?.window?.close(); }
+
 const tabs = [
   { path: '/', label: '专注', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
   { path: '/pomodoro', label: '番茄', icon: 'M12 7v4l2.5 2.5M15 3h-6m3 0V1m6.36 3.64l-.71.71M20 12h-2M4 12H2m3.64-6.36l-.71-.71M12 21a7 7 0 100-14 7 7 0 000 14z' },
@@ -190,6 +212,8 @@ onMounted(() => {
   initAuth();
   requestNotification();
   document.documentElement.setAttribute('data-theme', theme.value);
+
+  window.electronAPI?.window?.onMaximized?.((val) => { isMaximized.value = val; });
 
   window.addEventListener('beforeunload', (e) => {
     if (timerStore.state.isRunning) {
@@ -519,6 +543,51 @@ onMounted(() => {
 .dialog-enter-active { animation: fadeIn 0.2s ease; }
 .dialog-leave-active { transition: opacity 0.15s ease; }
 .dialog-leave-to { opacity: 0; }
+
+/* ── 客户端标题栏 ── */
+
+.titlebar {
+  display: flex;
+  align-items: center;
+  height: 28px;
+  background: var(--md-surface);
+  -webkit-app-region: drag;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.titlebar-drag-region {
+  flex: 1;
+  height: 100%;
+}
+
+.titlebar-controls {
+  display: flex;
+  height: 100%;
+  -webkit-app-region: no-drag;
+}
+
+.tbc-btn {
+  width: 46px;
+  height: 100%;
+  border: none;
+  background: transparent;
+  color: var(--md-on-surface-variant);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.tbc-btn:hover {
+  background: rgba(95, 99, 104, 0.12);
+}
+
+.tbc-close:hover {
+  background: #c5221f;
+  color: #fff;
+}
 
 @media (max-width: 768px) {
   .app-bar-row {
