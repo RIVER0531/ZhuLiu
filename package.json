@@ -46,7 +46,7 @@
       {
         "from": "backend/",
         "to": "app/backend/",
-        "filter": ["**/*"]
+        "filter": ["**/*", "!node_modules"]
       },
       {
         "from": "frontend/dist/",

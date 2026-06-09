@@ -15,6 +15,9 @@ function startBackend() {
   if (!isDev) {
     process.env.DB_PATH = path.join(app.getPath('userData'), 'riverflow.db');
     process.env.FRONTEND_DIST = path.join(process.resourcesPath, 'app', 'frontend', 'dist');
+
+    process.env.NODE_PATH = path.join(__dirname, '..', 'node_modules');
+    require('module').Module._initPaths();
   } else {
     process.env.DB_PATH = path.join(__dirname, '..', 'backend', 'riverflow.db');
     process.env.FRONTEND_DIST = path.join(__dirname, '..', 'frontend', 'dist');
